@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="description" content="SNAPBOARD — India-first AI business analytics dashboard" />
+  <title>{% block title %}SNAPBOARD{% endblock %}</title>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  <!-- Favicon: saffron circle emoji -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>" />
+
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <!-- ── Navbar ── -->
+  <nav class="navbar">
+    <a href="/" class="navbar-brand">
+      <span class="brand-icon">📊</span>
+      <span class="brand-text">SNAP<span class="brand-accent">BOARD</span></span>
+    </a>
+    <div class="navbar-actions">
+      <a href="/upload" class="btn btn-primary btn-sm">Upload Data</a>
+    </div>
+  </nav>
+
+  <!-- ── Flash / Error messages ── -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% if error is defined and error %}
+    <div class="flash-container">
+      <div class="flash flash-error">{{ error }}</div>
+    </div>
+  {% endif %}
+
+  <!-- ── Main content ── -->
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <p>
+      Made with ❤️ in India &nbsp;·&nbsp;
+      <span class="tricolor">🇮🇳</span> India-first analytics &nbsp;·&nbsp;
+      © {{ now.year if now is defined else 2025 }} SNAPBOARD
+    </p>
+  </footer>
+
+  <!-- ── Global JS ── -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

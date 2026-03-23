@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}{{ dashboard.filename }} — SNAPBOARD Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-page" data-id="{{ dashboard.id }}">
+
+  <!-- ── Dashboard header ── -->
+  <div class="dash-header">
+    <div class="dash-header-left">
+      <div class="dash-platform-badge {{ dashboard.platform }}">
+        {{ dashboard.platform | upper }}
+      </div>
+      <div>
+        <h1 class="dash-title">{{ dashboard.filename }}</h1>
+        <p class="dash-meta">
+          {{ dashboard.row_count | default(0) }} rows ·
+          Uploaded {{ dashboard.created_at }} ·
+          <span class="intent-tag intent-{{ dashboard.intent }}">{{ dashboard.intent | upper }}</span>
+        </p>
+        {% if dashboard.description %}
+          <p class="dash-desc">{{ dashboard.description }}</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="dash-header-actions">
+      <button class="btn btn-ghost btn-sm" id="btnShare" title="Copy share link">🔗 Share</button>
+      <button class="btn btn-ghost btn-sm" id="btnWhatsApp" title="Send WhatsApp digest">📲 WhatsApp</button>
+      <a class="btn btn-primary btn-sm" id="btnPDF" href="/api/export-pdf/{{ dashboard.id }}" target="_blank">📄 PDF</a>
+    </div>
+  </div>
+
+  <!-- ── GST Toggle bar ── -->
+  <div class="gst-bar">
+    <label class="toggle-label">
+      <input type="checkbox" id="gstToggle" />
+      <span class="toggle-slider"></span>
+      Show Ex-GST (net) revenue
+    </label>
+    <div id="gstRateSection" class="gst-inline" style="display:none">
+      <select id="gstRate" class="select-sm">
+        <option value="5">5%</option>
+        <option value="12">12%</option>
+        <option value="18" selected>18%</option>
+        <option value="28">28%</option>
+      </select>
+      <span id="gstInfo" class="gst-info-text"></span>
+    </div>
+  </div>
+
+  <!-- ── KPI Cards ── -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value" id="kpiRevenue">
+        {{ dashboard.metrics.get('total_revenue_fmt', '—') }}
+      </div>
+      {% if dashboard.metrics.get('mom_growth_fmt') %}
+      <div class="kpi-change {% if dashboard.metrics.get('mom_growth', 0) >= 0 %}positive{% else %}negative{% endif %}">
+        {{ dashboard.metrics.get('mom_growth_fmt') }} MoM
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Total Orders</div>
+      <div class="kpi-value">{{ dashboard.metrics.get('total_orders_fmt', '—') }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Order Value</div>
+      <div class="kpi-value">{{ dashboard.metrics.get('avg_order_value_fmt', '—') }}</div>
+    </div>
+
+    {% if dashboard.metrics.get('mom_growth_fmt') %}
+    <div class="kpi-card">
+      <div class="kpi-label">MoM Growth</div>
+      <div class="kpi-value {% if dashboard.metrics.get('mom_growth', 0) >= 0 %}text-green{% else %}text-red{% endif %}">
+        {{ dashboard.metrics.get('mom_growth_fmt') }}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Hinglish columns notice ── -->
+  {% if dashboard.hinglish_detected %}
+  <div class="hinglish-notice">
+    <strong>🗺️ Hinglish columns mapped:</strong>
+    {% for orig, mapped in dashboard.hinglish_detected.items() %}
+      <span class="col-badge">{{ orig }} → {{ mapped }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ── Charts grid ── -->
+  <div class="charts-grid">
+
+    <!-- Monthly Revenue -->
+    {% if dashboard.metrics.get('monthly_revenue') %}
+    <div class="chart-card chart-wide">
+      <div class="chart-card-header">
+        <h3>Monthly Revenue (₹)</h3>
+        <div class="chart-actions">
+          <button class="btn-chart-type active" data-chart="monthlyChart" data-type="bar">Bar</button>
+          <button class="btn-chart-type" data-chart="monthlyChart" data-type="line">Line</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="monthlyChart"></canvas>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Daily Revenue (last 30 days) -->
+    {% if dashboard.metrics.get('daily_revenue') %}
+    <div class="chart-card chart-wide">
+      <div class="chart-card-header">
+        <h3>Daily Revenue — Last 30 Days (₹)</h3>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="dailyChart"></canvas>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Top Products -->
+    {% if dashboard.metrics.get('top_products') %}
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <h3>Top Products by Revenue</h3>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="productsChart"></canvas>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Top Cities -->
+    {% if dashboard.metrics.get('top_cities') %}
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <h3>Revenue by City (₹)</h3>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="citiesChart"></canvas>
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- /charts-grid -->
+
+  <!-- ── Natural Language Chat ── -->
+  <div class="chat-section">
+    <h3>💬 Edit Dashboard with Natural Language</h3>
+    <p class="chat-hint">Try: "Show me top 5 products" · "Bar chart for cities" · "Filter to last 3 months"</p>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-wrap">
+      <input
+        type="text"
+        id="chatInput"
+        class="chat-input"
+        placeholder="Type your request in English or Hinglish…"
+        autocomplete="off"
+      />
+      <button class="btn btn-primary" id="chatSend">Send</button>
+    </div>
+  </div>
+
+  <!-- ── WhatsApp Modal ── -->
+  <div class="modal-overlay" id="whatsappModal" style="display:none">
+    <div class="modal-card">
+      <h3>📲 Send WhatsApp Digest</h3>
+      <p>Enter your Indian mobile number to receive the daily digest.</p>
+      <input
+        type="tel"
+        id="whatsappPhone"
+        class="input-field"
+        placeholder="9876543210 (without +91)"
+        maxlength="13"
+      />
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="modalClose">Cancel</button>
+        <button class="btn btn-primary" id="modalSend">Send Digest</button>
+      </div>
+      <p id="whatsappResult" class="modal-result"></p>
+    </div>
+  </div>
+
+</div><!-- /dashboard-page -->
+
+<!-- Inject dashboard metrics as JSON for JS -->
+<script>
+  const DASHBOARD_ID = "{{ dashboard.id }}";
+  const DASHBOARD_METRICS = {{ dashboard.metrics | tojson }};
+  const DASHBOARD_INTENT  = "{{ dashboard.intent }}";
+  const DASHBOARD_PLATFORM = "{{ dashboard.platform }}";
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

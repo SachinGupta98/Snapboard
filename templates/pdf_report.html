@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SNAPBOARD — Investor Report</title>
+  <style>
+    /* WeasyPrint-compatible CSS */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Inter, Arial, sans-serif;
+      background: #ffffff;
+      color: #1a1a1a;
+      font-size: 12pt;
+    }
+    .page { padding: 32px 40px; }
+    .header {
+      border-bottom: 3px solid #FF6B35;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .brand { font-size: 24pt; font-weight: 700; color: #FF6B35; }
+    .brand span { color: #1a1a1a; }
+    .report-meta { font-size: 9pt; color: #666; text-align: right; }
+
+    h2 { font-size: 14pt; margin: 24px 0 12px; color: #FF6B35; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      text-align: center;
+    }
+    .kpi-label { font-size: 8pt; color: #888; text-transform: uppercase; }
+    .kpi-value { font-size: 18pt; font-weight: 700; color: #1a1a1a; margin: 4px 0; }
+    .kpi-change-pos { font-size: 9pt; color: #16a34a; }
+    .kpi-change-neg { font-size: 9pt; color: #dc2626; }
+
+    .data-section { margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+    th {
+      background: #FF6B35;
+      color: #fff;
+      padding: 8px 10px;
+      text-align: left;
+      font-weight: 600;
+    }
+    td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; }
+    tr:nth-child(even) td { background: #fafafa; }
+
+    .intent-badge {
+      display: inline-block;
+      background: #FF6B35;
+      color: #fff;
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 9pt;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .hinglish-tag {
+      display: inline-block;
+      background: #fff7ed;
+      border: 1px solid #FF6B35;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 8pt;
+      margin: 2px;
+    }
+    .footer-note {
+      border-top: 1px solid #e0e0e0;
+      margin-top: 32px;
+      padding-top: 12px;
+      font-size: 8pt;
+      color: #999;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="brand">SNAP<span>BOARD</span></div>
+      <p style="font-size:9pt;color:#888;">India-First AI Business Analytics</p>
+    </div>
+    <div class="report-meta">
+      <p><strong>File:</strong> {{ dashboard.filename }}</p>
+      <p><strong>Platform:</strong> {{ dashboard.platform | upper }}</p>
+      <p><strong>Intent:</strong> <span class="intent-badge">{{ dashboard.intent }}</span></p>
+      <p><strong>Generated:</strong> {{ dashboard.created_at }}</p>
+      <p><strong>Rows:</strong> {{ dashboard.row_count }}</p>
+    </div>
+  </div>
+
+  {% if dashboard.description %}
+  <p style="margin-bottom:16px;color:#555;">{{ dashboard.description }}</p>
+  {% endif %}
+
+  <!-- KPI Cards -->
+  <h2>Key Performance Indicators</h2>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value">{{ dashboard.metrics.get('total_revenue_fmt', '—') }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Orders</div>
+      <div class="kpi-value">{{ dashboard.metrics.get('total_orders_fmt', '—') }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Order Value</div>
+      <div class="kpi-value">{{ dashboard.metrics.get('avg_order_value_fmt', '—') }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">MoM Growth</div>
+      <div class="kpi-value">{{ dashboard.metrics.get('mom_growth_fmt', '—') }}</div>
+      {% if dashboard.metrics.get('mom_growth', 0) >= 0 %}
+        <div class="kpi-change-pos">▲ Growing</div>
+      {% else %}
+        <div class="kpi-change-neg">▼ Declining</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Monthly Revenue Table -->
+  {% if dashboard.metrics.get('monthly_revenue') %}
+  <div class="data-section">
+    <h2>Monthly Revenue</h2>
+    <table>
+      <tr>
+        <th>Month</th>
+        <th>Revenue (₹)</th>
+      </tr>
+      {% for row in dashboard.metrics.monthly_revenue %}
+      <tr>
+        <td>{{ row.month }}</td>
+        <td>{{ "₹{:,.0f}".format(row.revenue) }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Top Products Table -->
+  {% if dashboard.metrics.get('top_products') %}
+  <div class="data-section">
+    <h2>Top 5 Products by Revenue</h2>
+    <table>
+      <tr>
+        <th>#</th>
+        <th>Product</th>
+        <th>Revenue (₹)</th>
+      </tr>
+      {% for row in dashboard.metrics.top_products %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ row.name }}</td>
+        <td>{{ "₹{:,.0f}".format(row.revenue) }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Top Cities Table -->
+  {% if dashboard.metrics.get('top_cities') %}
+  <div class="data-section">
+    <h2>Revenue by City</h2>
+    <table>
+      <tr>
+        <th>#</th>
+        <th>City</th>
+        <th>Revenue (₹)</th>
+      </tr>
+      {% for row in dashboard.metrics.top_cities %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ row.city }}</td>
+        <td>{{ "₹{:,.0f}".format(row.revenue) }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Hinglish Mapping -->
+  {% if dashboard.hinglish_detected %}
+  <div class="data-section">
+    <h2>Hinglish Column Mapping</h2>
+    <p style="margin-bottom:8px;font-size:10pt;color:#555;">
+      The following Hinglish column names were auto-mapped:
+    </p>
+    {% for orig, mapped in dashboard.hinglish_detected.items() %}
+      <span class="hinglish-tag">{{ orig }} → {{ mapped }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Footer -->
+  <div class="footer-note">
+    <p>
+      Generated by SNAPBOARD — India-First AI Business Analytics &nbsp;·&nbsp;
+      All amounts in Indian Rupees (₹) &nbsp;·&nbsp;
+      Numbers in Indian format (Lakh/Crore) &nbsp;·&nbsp;
+      Dates: DD/MM/YYYY
+    </p>
+  </div>
+
+</div>
+</body>
+</html>
