@@ -21,6 +21,11 @@ dashboards_store: dict = {}
 
 # ─── India Format Helpers ────────────────────────────────────────
 
+# Indian number system thresholds
+INR_CRORE = 1_00_00_000   # 10,000,000
+INR_LAKH  = 1_00_000      # 100,000
+INR_THOU  = 1_000         # 1,000
+
 
 def format_inr(amount: float) -> str:
     """Format amount in Indian notation with ₹ prefix."""
@@ -28,12 +33,12 @@ def format_inr(amount: float) -> str:
         amount = float(amount)
     except (TypeError, ValueError):
         return "₹0"
-    if amount >= 1_00_00_000:
-        return f"₹{amount / 1_00_00_000:.1f}Cr"
-    if amount >= 1_00_000:
-        return f"₹{amount / 1_00_000:.1f}L"
-    if amount >= 1_000:
-        return f"₹{amount / 1_000:.1f}K"
+    if amount >= INR_CRORE:
+        return f"₹{amount / INR_CRORE:.1f}Cr"
+    if amount >= INR_LAKH:
+        return f"₹{amount / INR_LAKH:.1f}L"
+    if amount >= INR_THOU:
+        return f"₹{amount / INR_THOU:.1f}K"
     return f"₹{int(amount):,}"
 
 
@@ -150,7 +155,11 @@ def compute_metrics(df: pd.DataFrame, platform: str = "generic") -> dict:
     )
     if date_col:
         try:
-            df[date_col] = pd.to_datetime(df[date_col], dayfirst=True, errors="coerce")
+            df[date_col] = pd.to_datetime(
+                df[date_col],
+                dayfirst=True,  # India-first: DD/MM/YYYY date format
+                errors="coerce",
+            )
             df = df.dropna(subset=[date_col])
             df["_month"] = df[date_col].dt.to_period("M").astype(str)
             df["_day"] = df[date_col].dt.strftime("%d/%m/%Y")
@@ -551,4 +560,5 @@ def setup_scheduler():
 
 if __name__ == "__main__":
     setup_scheduler()
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
+    app.run(debug=debug_mode, host="0.0.0.0", port=5000)

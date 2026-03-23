@@ -36,6 +36,10 @@ const INDIAN_TOOLTIP = {
 
 /* ── Colour palette ───────────────────────────────
  * Saffron-centric with gold, green accents.
+ * These mirror the CSS custom properties in style.css
+ * (--clr-primary, --clr-gold, --clr-green, etc.) but are
+ * duplicated here because Chart.js canvas rendering cannot
+ * read CSS custom properties at draw time.
 ─────────────────────────────────────────────────── */
 const PALETTE = [
   '#FF6B35', // saffron
