@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}SNAPBOARD — India-First AI Business Dashboard{% endblock %}
+
+{% block content %}
+<!-- ══════════════════════════════════════════
+     HERO
+══════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-badge">🇮🇳 Made for Indian Founders</div>
+  <h1 class="hero-title">
+    Your Business Data,<br />
+    <span class="gradient-text">Analysed in Seconds</span>
+  </h1>
+  <p class="hero-subtitle">
+    Upload your Razorpay, Zoho or Shopify CSV — AI detects intent,
+    builds a live dashboard in ₹ &amp; Indian format, and sends a
+    Hinglish WhatsApp digest at 8 AM daily.
+  </p>
+  <div class="hero-cta">
+    <a href="/upload" class="btn btn-primary btn-lg">
+      📤 Upload Your Data
+    </a>
+    <a href="#features" class="btn btn-ghost btn-lg">See How It Works</a>
+  </div>
+
+  <!-- Live stat pills -->
+  <div class="hero-stats">
+    <div class="stat-pill">💰 Revenue in ₹ &amp; Lakhs</div>
+    <div class="stat-pill">📊 Auto Charts</div>
+    <div class="stat-pill">🤖 AI Intent Detection</div>
+    <div class="stat-pill">📱 WhatsApp Digest</div>
+    <div class="stat-pill">📄 Investor PDF</div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     HOW IT WORKS
+══════════════════════════════════════════ -->
+<section class="section" id="features">
+  <div class="section-header">
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-subtitle">Three steps from raw CSV to live dashboard</p>
+  </div>
+
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-number">01</div>
+      <div class="step-icon">📤</div>
+      <h3>Upload</h3>
+      <p>Drop your Razorpay / Zoho / Shopify CSV or Excel. We auto-detect the platform and map Hinglish column names.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-number">02</div>
+      <div class="step-icon">🤖</div>
+      <h3>AI Analyses</h3>
+      <p>Gemini 1.5 Flash detects your business intent (Revenue / Churn / ROAS / Ops) and builds the right charts.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-number">03</div>
+      <div class="step-icon">📊</div>
+      <h3>Share &amp; Act</h3>
+      <p>Get a shareable link, one-tap investor PDF, and daily WhatsApp digest — all in ₹ and Indian format.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     FEATURES
+══════════════════════════════════════════ -->
+<section class="section section-dark">
+  <div class="section-header">
+    <h2 class="section-title">Built for <span class="gradient-text">Bharat</span></h2>
+    <p class="section-subtitle">Every rule follows India-first standards</p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">₹</div>
+      <h3>Indian Currency</h3>
+      <p>Always ₹. Numbers in Lakh/Crore system. ₹10L, ₹2.3Cr, ₹50K — never Western format.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🗓️</div>
+      <h3>DD/MM/YYYY Dates</h3>
+      <p>Every date displayed in Indian format. No MM/DD/YYYY confusion for Indian founders.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🇮🇳</div>
+      <h3>Hinglish Support</h3>
+      <p>Column names like Bill_tareekh, Daam, Cheez, Sheher auto-mapped to English equivalents.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧾</div>
+      <h3>GST Toggle</h3>
+      <p>Switch between gross and net (ex-GST) revenue. Net = Gross ÷ (1 + rate%). 18% default.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📱</div>
+      <h3>Mobile First</h3>
+      <p>Every page tested at 375px. Use on your phone during a chai break — it works perfectly.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💬</div>
+      <h3>Natural Language Edit</h3>
+      <p>Type "show last 3 months" or "pie chart for top cities" — AI updates your dashboard instantly.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📲</div>
+      <h3>WhatsApp Digest</h3>
+      <p>Daily 8 AM Hinglish summary to your WhatsApp. Revenue, orders, MoM growth — all ₹.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📄</div>
+      <h3>Investor PDF</h3>
+      <p>One-tap professional PDF with all charts and KPIs — ready to share with investors or board.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     PLATFORMS
+══════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Supported Platforms</h2>
+  </div>
+  <div class="platforms-row">
+    <div class="platform-badge razorpay">Razorpay</div>
+    <div class="platform-badge zoho">Zoho</div>
+    <div class="platform-badge shopify">Shopify</div>
+    <div class="platform-badge generic">Generic CSV / Excel</div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CTA
+══════════════════════════════════════════ -->
+<section class="section cta-section">
+  <h2 class="section-title">Ready to get started?</h2>
+  <p class="section-subtitle">Upload your CSV — dashboard ready in under 30 seconds.</p>
+  <a href="/upload" class="btn btn-primary btn-xl">
+    📤 Upload Your Data Now
+  </a>
+</section>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Upload Data — SNAPBOARD{% endblock %}
+
+{% block content %}
+<div class="upload-page">
+
+  <!-- ── Page header ── -->
+  <div class="page-header">
+    <h1>Upload Your Business Data</h1>
+    <p>CSV or Excel from Razorpay, Zoho, Shopify — or any generic format</p>
+  </div>
+
+  <!-- ── Upload card ── -->
+  <div class="upload-container">
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-zone-inner">
+        <div class="drop-icon">📂</div>
+        <p class="drop-title">Drag &amp; drop your file here</p>
+        <p class="drop-sub">or</p>
+        <label for="fileInput" class="btn btn-primary">Browse File</label>
+        <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" hidden />
+        <p class="drop-hint">Supports: CSV, XLSX, XLS · Max 10 MB</p>
+      </div>
+    </div>
+
+    <!-- File preview (hidden until file selected) -->
+    <div class="file-preview" id="filePreview" style="display:none">
+      <div class="file-info">
+        <span class="file-icon">📄</span>
+        <div>
+          <p class="file-name" id="fileName">—</p>
+          <p class="file-meta" id="fileMeta">—</p>
+        </div>
+        <button class="btn-icon" id="removeFile" title="Remove file">✕</button>
+      </div>
+
+      <!-- Platform tag (auto-detected) -->
+      <div id="platformTag" class="platform-detected" style="display:none">
+        <span id="platformIcon">🔍</span>
+        <span id="platformLabel">Detecting platform…</span>
+      </div>
+
+      <!-- Hinglish column mapping notice -->
+      <div id="hinglishNotice" class="hinglish-notice" style="display:none">
+        <p><strong>🗺️ Hinglish columns detected &amp; mapped:</strong></p>
+        <div id="hinglishList" class="hinglish-list"></div>
+      </div>
+
+      <!-- Column preview table -->
+      <div id="previewSection" class="preview-section" style="display:none">
+        <h3>Data Preview <span class="badge" id="rowCountBadge">0 rows</span></h3>
+        <div class="table-scroll">
+          <table id="previewTable" class="preview-table"></table>
+        </div>
+      </div>
+
+      <!-- GST toggle -->
+      <div class="gst-section">
+        <label class="toggle-label">
+          <input type="checkbox" id="gstToggle" />
+          <span class="toggle-slider"></span>
+          GST Inclusive?
+        </label>
+        <div id="gstRateSection" class="gst-rate" style="display:none">
+          <label>GST Rate:
+            <select id="gstRate" class="select-sm">
+              <option value="5">5%</option>
+              <option value="12">12%</option>
+              <option value="18" selected>18%</option>
+              <option value="28">28%</option>
+            </select>
+          </label>
+          <p class="gst-hint">Net = Gross ÷ (1 + rate/100)</p>
+        </div>
+      </div>
+
+      <!-- AI intent badge (after analysis) -->
+      <div id="intentBadge" class="intent-badge" style="display:none">
+        <span id="intentIcon">🤖</span>
+        <span id="intentLabel">Analysing intent…</span>
+        <p id="intentDesc" class="intent-desc"></p>
+      </div>
+
+      <!-- Generate button -->
+      <button class="btn btn-primary btn-lg btn-full" id="generateBtn" style="display:none">
+        🚀 Generate Dashboard
+      </button>
+    </div>
+
+    <!-- Processing overlay -->
+    <div class="processing-overlay" id="processingOverlay" style="display:none">
+      <div class="processing-card">
+        <div class="spinner"></div>
+        <p id="processingMsg">Analysing your data…</p>
+        <p class="processing-sub">AI is reading your CSV…</p>
+      </div>
+    </div>
+
+  </div><!-- /upload-container -->
+
+  <!-- ── Supported platforms row ── -->
+  <div class="platforms-hint">
+    <p>Auto-detects &amp; maps columns from:</p>
+    <div class="platforms-row">
+      <div class="platform-badge razorpay">Razorpay</div>
+      <div class="platform-badge zoho">Zoho</div>
+      <div class="platform-badge shopify">Shopify</div>
+      <div class="platform-badge generic">Generic CSV</div>
+    </div>
+  </div>
+
+</div><!-- /upload-page -->
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}
