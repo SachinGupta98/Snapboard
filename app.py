@@ -467,11 +467,223 @@ def export_pdf(dashboard_id):
     if not dash:
         return jsonify({"error": "Dashboard not found"}), 404
     try:
-        from weasyprint import HTML as WeasyHTML  # noqa: PLC0415
+        from reportlab.lib import colors as rl_colors  # noqa: PLC0415
+        from reportlab.lib.pagesizes import A4  # noqa: PLC0415
+        from reportlab.lib.styles import ParagraphStyle  # noqa: PLC0415
+        from reportlab.lib.units import cm  # noqa: PLC0415
+        from reportlab.platypus import (  # noqa: PLC0415
+            HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle,
+        )
 
-        html_content = render_template("pdf_report.html", dashboard=dash)
+        metrics = dash.get("metrics", {})
         pdf_io = io.BytesIO()
-        WeasyHTML(string=html_content, base_url=request.host_url).write_pdf(pdf_io)
+
+        # ── Colours ───────────────────────────────────────────────
+        # Defined inside the function because they depend on the lazy
+        # rl_colors import (ReportLab is optional; not installed at module load).
+        SAFFRON = rl_colors.HexColor("#FF6B35")
+        GREY    = rl_colors.HexColor("#888888")
+        DARK    = rl_colors.HexColor("#1a1a1a")
+        STRIPE  = rl_colors.HexColor("#fafafa")
+        BORDER  = rl_colors.HexColor("#e0e0e0")
+
+        # Usable page width after 2.5 cm margins on each side
+        PAGE_W = A4[0] - 5 * cm
+
+        doc = SimpleDocTemplate(
+            pdf_io,
+            pagesize=A4,
+            leftMargin=2.5 * cm, rightMargin=2.5 * cm,
+            topMargin=2.5 * cm, bottomMargin=2.5 * cm,
+            title=f"SNAPBOARD Report — {dash.get('filename', '')}",
+            author="SNAPBOARD",
+        )
+
+        # ── Paragraph styles ──────────────────────────────────────
+        def make_style(name, font="Helvetica", size=10, color=DARK, align=0, leading=None, **kw):
+            """Create a ReportLab ParagraphStyle with sensible defaults."""
+            return ParagraphStyle(
+                name,
+                fontName=font,
+                fontSize=size,
+                textColor=color,
+                alignment=align,
+                leading=leading or max(size * 1.3, size + 2),
+                **kw,
+            )
+
+        brand_s   = make_style("brand",   "Helvetica-Bold", 22, SAFFRON)
+        sub_s     = make_style("sub",     size=8,  color=GREY)
+        meta_s    = make_style("meta",    size=9,  leading=14)
+        sec_s     = make_style("sec",     "Helvetica-Bold", 13, SAFFRON)
+        kpi_lbl_s = make_style("kl",      size=7,  color=GREY, align=1)
+        kpi_val_s = make_style("kv",      "Helvetica-Bold", 16, align=1)
+        kpi_chg_s = make_style("kc",      size=8,  align=1)
+        th_s      = make_style("th",      "Helvetica-Bold", 9, rl_colors.white)
+        td_s      = make_style("td",      size=9)
+        hd_s      = make_style("hd",      size=9,  color=GREY, spaceAfter=4)
+        hm_s      = make_style("hm",      size=9)
+        foot_s    = make_style("foot",    size=7,  color=GREY, align=1)
+        desc_s    = make_style("desc",    size=10, color=GREY, leading=14)
+
+        # ── Table style helper ────────────────────────────────────
+        def std_table_style():
+            return TableStyle([
+                ("BACKGROUND",    (0, 0), (-1, 0), SAFFRON),
+                ("ROWBACKGROUNDS",(0, 1), (-1, -1), [rl_colors.white, STRIPE]),
+                ("GRID",          (0, 0), (-1, -1), 0.5, BORDER),
+                ("TOPPADDING",    (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("LEFTPADDING",   (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING",  (0, 0), (-1, -1), 8),
+                ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+            ])
+
+        def section_heading(text):
+            story.append(Spacer(1, 0.5 * cm))
+            story.append(Paragraph(text, sec_s))
+            story.append(HRFlowable(width="100%", thickness=1, color=SAFFRON, spaceAfter=6))
+
+        story = []
+
+        # ── Header: brand + metadata side by side ─────────────────
+        meta_lines = [
+            f"<b>File:</b> {dash.get('filename', '—')}",
+            f"<b>Platform:</b> {dash.get('platform', '—').upper()}",
+            f"<b>Intent:</b> {dash.get('intent', '—').upper()}",
+            f"<b>Generated:</b> {dash.get('created_at', '—')}",
+            f"<b>Rows:</b> {dash.get('row_count', 0)}",
+        ]
+        header_data = [[
+            [Paragraph("SNAPBOARD", brand_s),
+             Paragraph("India-First AI Business Analytics", sub_s)],
+            [Paragraph("<br/>".join(meta_lines), meta_s)],
+        ]]
+        header_table = Table(header_data, colWidths=[PAGE_W * 0.55, PAGE_W * 0.45])
+        header_table.setStyle(TableStyle([
+            ("ALIGN",    (0, 0), (0, 0), "LEFT"),
+            ("ALIGN",    (1, 0), (1, 0), "RIGHT"),
+            ("VALIGN",   (0, 0), (-1, -1), "TOP"),
+            ("LINEBELOW",(0, 0), (-1, 0), 2, SAFFRON),
+            ("TOPPADDING",    (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+            ("LEFTPADDING",   (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING",  (0, 0), (-1, -1), 0),
+        ]))
+        story.append(header_table)
+
+        if dash.get("description"):
+            story.append(Spacer(1, 0.3 * cm))
+            story.append(Paragraph(dash["description"], desc_s))
+
+        # ── KPI Cards ─────────────────────────────────────────────
+        section_heading("Key Performance Indicators")
+        mom_growth = metrics.get("mom_growth", 0)
+        mom_fmt    = metrics.get("mom_growth_fmt", "—")
+        if mom_growth >= 0:
+            mom_text = f'<font color="#16a34a">▲ {mom_fmt} Growing</font>'
+        else:
+            mom_text = f'<font color="#dc2626">▼ {mom_fmt} Declining</font>'
+
+        col_w = PAGE_W / 4
+        kpi_data = [[
+            [Paragraph("TOTAL REVENUE",    kpi_lbl_s),
+             Paragraph(metrics.get("total_revenue_fmt",    "—"), kpi_val_s)],
+            [Paragraph("TOTAL ORDERS",     kpi_lbl_s),
+             Paragraph(metrics.get("total_orders_fmt",     "—"), kpi_val_s)],
+            [Paragraph("AVG ORDER VALUE",  kpi_lbl_s),
+             Paragraph(metrics.get("avg_order_value_fmt",  "—"), kpi_val_s)],
+            [Paragraph("MoM GROWTH",       kpi_lbl_s),
+             Paragraph(mom_text,                               kpi_chg_s)],
+        ]]
+        kpi_table = Table(kpi_data, colWidths=[col_w] * 4)
+        kpi_table.setStyle(TableStyle([
+            ("BOX",           (0, 0), (0, 0), 0.5, BORDER),
+            ("BOX",           (1, 0), (1, 0), 0.5, BORDER),
+            ("BOX",           (2, 0), (2, 0), 0.5, BORDER),
+            ("BOX",           (3, 0), (3, 0), 0.5, BORDER),
+            ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING",    (0, 0), (-1, -1), 8),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ("LEFTPADDING",   (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING",  (0, 0), (-1, -1), 6),
+        ]))
+        story.append(kpi_table)
+
+        # ── Monthly Revenue ────────────────────────────────────────
+        monthly = metrics.get("monthly_revenue", [])
+        if monthly:
+            section_heading("Monthly Revenue")
+            rows = [[Paragraph("Month", th_s), Paragraph("Revenue (₹)", th_s)]]
+            for r in monthly:
+                rows.append([
+                    Paragraph(str(r["month"]), td_s),
+                    Paragraph(format_inr(r["revenue"]), td_s),
+                ])
+            t = Table(rows, colWidths=[PAGE_W * 0.5, PAGE_W * 0.5])
+            t.setStyle(std_table_style())
+            story.append(t)
+
+        # ── Top Products ───────────────────────────────────────────
+        products = metrics.get("top_products", [])
+        if products:
+            section_heading("Top 5 Products by Revenue")
+            rows = [[
+                Paragraph("#", th_s),
+                Paragraph("Product", th_s),
+                Paragraph("Revenue (₹)", th_s),
+            ]]
+            for i, r in enumerate(products, 1):
+                rows.append([
+                    Paragraph(str(i), td_s),
+                    Paragraph(str(r["name"]), td_s),
+                    Paragraph(format_inr(r["revenue"]), td_s),
+                ])
+            t = Table(rows, colWidths=[1.2 * cm, PAGE_W - 1.2 * cm - 4 * cm, 4 * cm])
+            t.setStyle(std_table_style())
+            story.append(t)
+
+        # ── Top Cities ─────────────────────────────────────────────
+        cities = metrics.get("top_cities", [])
+        if cities:
+            section_heading("Revenue by City")
+            rows = [[
+                Paragraph("#", th_s),
+                Paragraph("City", th_s),
+                Paragraph("Revenue (₹)", th_s),
+            ]]
+            for i, r in enumerate(cities, 1):
+                rows.append([
+                    Paragraph(str(i), td_s),
+                    Paragraph(str(r["city"]), td_s),
+                    Paragraph(format_inr(r["revenue"]), td_s),
+                ])
+            t = Table(rows, colWidths=[1.2 * cm, PAGE_W - 1.2 * cm - 4 * cm, 4 * cm])
+            t.setStyle(std_table_style())
+            story.append(t)
+
+        # ── Hinglish Column Mapping ────────────────────────────────
+        hinglish = dash.get("hinglish_detected", {})
+        if hinglish:
+            section_heading("Hinglish Column Mapping")
+            story.append(Paragraph("The following Hinglish column names were auto-mapped:", hd_s))
+            mapping_text = "  ·  ".join(
+                f"{orig} → {mapped}" for orig, mapped in hinglish.items()
+            )
+            story.append(Paragraph(mapping_text, hm_s))
+
+        # ── Footer ─────────────────────────────────────────────────
+        story.append(Spacer(1, 1 * cm))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=BORDER))
+        story.append(Spacer(1, 0.2 * cm))
+        story.append(Paragraph(
+            "Generated by SNAPBOARD — India-First AI Business Analytics  ·  "
+            "All amounts in Indian Rupees (₹)  ·  "
+            "Numbers in Indian format (Lakh/Crore)  ·  Dates: DD/MM/YYYY",
+            foot_s,
+        ))
+
+        doc.build(story)
         pdf_io.seek(0)
         return send_file(
             pdf_io,
